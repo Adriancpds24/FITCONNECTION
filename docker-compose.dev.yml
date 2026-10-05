@@ -1,0 +1,32 @@
+services:
+  # Dev helper: rebuild the Flutter web image automatically when you change code.
+  # (This project serves Flutter Web as static files via nginx, so rebuild is the
+  # simplest way to reflect UI changes when staying inside Docker.)
+  frontend:
+    develop:
+      watch:
+        - action: rebuild
+          path: ./lib
+        - action: rebuild
+          path: ./assets
+        - action: rebuild
+          path: ./pubspec.yaml
+        - action: rebuild
+          path: ./pubspec.lock
+
+  # Dev helper: live-reload the Node API without rebuilding the image each time.
+  # The container already runs `ts-node-dev`, so bind-mounting `src/` is enough.
+  api:
+    volumes:
+      - ./Database/api/src:/app/src
+      - ./Database/api/scripts:/app/scripts
+      - ./Database/api/uploads:/app/uploads
+      - ./Database/api/tsconfig.json:/app/tsconfig.json
+    develop:
+      watch:
+        # If dependencies change, rebuild so node_modules updates.
+        - action: rebuild
+          path: ./Database/api/package.json
+        - action: rebuild
+          path: ./Database/api/package-lock.json
+

@@ -1,0 +1,4 @@
+storePassword=CAMBIA_ESTA_PASSWORD
+keyPassword=CAMBIA_ESTA_PASSWORD
+keyAlias=fitconnect
+storeFile=app/fitconnect-release-key.jks

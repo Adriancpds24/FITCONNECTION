@@ -1,0 +1,10 @@
+# Servicio API en Railway
+# IMPORTANTE: crea un Volume en el panel de Railway y montalo en /app/uploads
+# sin eso las fotos de posts/historias/comidas se pierden en cada deploy (404).
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"

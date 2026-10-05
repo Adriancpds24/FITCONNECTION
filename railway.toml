@@ -1,0 +1,21 @@
+# FitConnect — Railway deployment config
+# Unified build: API (Express + Socket.io) + Flutter Web frontend
+#
+# Pasos en Railway:
+# 1. New Project → Deploy from GitHub repo
+# 2. Add PostgreSQL plugin (genera DATABASE_URL automáticamente)
+# 3. Add Volume: Mount path = /app/uploads (para fotos)
+# 4. Variables de entorno:
+#    - JWT_SECRET = (genera una clave segura)
+#    - AI_PROVIDER = gemini (o openai/groq/openrouter)
+#    - GEMINI_API_KEY = (tu clave)
+#    - SMTP_* = (opcional, para emails)
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile.railway"
+
+[deploy]
+restartPolicyType = "on_failure"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30

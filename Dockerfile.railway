@@ -1,0 +1,73 @@
+# =============================================================
+# FitConnect — Railway Unified Dockerfile (API + Flutter Web)
+# =============================================================
+# Build context: raíz del repositorio
+# Un solo contenedor sirve la API (Express) y el frontend (Flutter Web).
+#
+# Variables de entorno necesarias en Railway:
+#   DATABASE_URL          → lo pone Railway al añadir PostgreSQL
+#   JWT_SECRET            → tu clave secreta
+#   PORT                  → 3000 (Railway lo asigna automáticamente)
+#
+# Opcionales:
+#   AI_PROVIDER + claves  → OpenAI, Gemini, Groq u OpenRouter
+#   SMTP_*                → para recuperación de contraseña por email
+# =============================================================
+
+# ---------- Stage 1: Build Flutter Web ----------
+FROM ubuntu:22.04 AS flutter-build
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    curl git wget unzip libstdc++6 libglu1-mesa \
+    fonts-droid-fallback python3 ca-certificates \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/flutter/flutter.git -b stable --depth 1 /usr/local/flutter
+ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
+RUN git config --global --add safe.directory /usr/local/flutter
+
+WORKDIR /flutter-app
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
+
+COPY lib ./lib
+COPY web ./web
+COPY assets ./assets
+# fonts dir is optional — some projects embed fonts in assets instead
+COPY font[s] ./fonts
+COPY l10n.yam[l] analysis_options.yaml .metadata ./
+
+RUN flutter build web --release --no-web-resources-cdn --pwa-strategy=none
+
+# ---------- Stage 2: Build Node API ----------
+FROM node:20 AS api-build
+
+WORKDIR /app
+COPY Database/api/package*.json ./
+RUN npm install
+COPY Database/api/ .
+RUN npm run build
+
+# ---------- Stage 3: Production ----------
+FROM node:20-slim
+
+WORKDIR /app
+
+COPY --from=api-build /app/package*.json ./
+RUN npm install --omit=dev
+
+COPY --from=api-build /app/dist ./dist
+COPY --from=api-build /app/base\ de\ datos ./base\ de\ datos
+
+# Flutter web build → /app/public
+COPY --from=flutter-build /flutter-app/build/web ./public
+
+RUN mkdir -p /app/uploads/posts /app/uploads/stories /app/uploads/nutrition
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV UPLOADS_DIR=/app/uploads
+ENV PUBLIC_DIR=/app/public
+CMD ["node", "dist/index.js"]
